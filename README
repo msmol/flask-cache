@@ -1,3 +1,5 @@
 Flask-Cache
 
-Adds easy cache support to Flask.
+Adds easy cache support to Flask. Fork to support nesting decorators.
+
+Python3.x only

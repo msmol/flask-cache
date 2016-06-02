@@ -42,7 +42,7 @@ def function_namespace(f, args=None):
     """
     Attempts to returns unique namespace for function
     """
-    m_args = inspect.signature(f, follow_wrapped=True)[0]
+    m_args = list(inspect.signature(f).parameters.keys())
     instance_token = None
 
     instance_self = getattr(f, '__self__', None)
@@ -414,53 +414,20 @@ class Cache(object):
         #: whether the function was called with
         #: 1, b=2 is equivilant to a=1, b=2, etc.
         new_args = []
-        arg_num = 0
-        argspec = inspect.signature(f, follow_wrapped=True)
 
-        args_len = len(argspec.args)
-        if args_len:
-            for i in range(args_len):
-                if i == 0 and argspec.args[i] in ('self', 'cls'):
-                    #: use the repr of the class instance
-                    #: this supports instance methods for
-                    #: the memoized functions, giving more
-                    #: flexibility to developers
-                    arg = repr(args[0])
-                    arg_num += 1
-                elif argspec.args[i] in kwargs:
-                    arg = kwargs[argspec.args[i]]
-                elif arg_num < len(args):
-                    arg = args[arg_num]
-                    arg_num += 1
-                elif abs(i-args_len) <= len(argspec.defaults):
-                    arg = argspec.defaults[i-args_len]
-                    arg_num += 1
-                else:
-                    arg = None
-                    arg_num += 1
-
-                #: Attempt to convert all arguments to a
-                #: hash/id or a representation?
-                #: Not sure if this is necessary, since
-                #: using objects as keys gets tricky quickly.
-                # if hasattr(arg, '__class__'):
-                #     try:
-                #         arg = hash(arg)
-                #     except:
-                #         arg = repr(arg)
-
-                #: Or what about a special __cacherepr__ function
-                #: on an object, this allows objects to act normal
-                #: upon inspection, yet they can define a representation
-                #: that can be used to make the object unique in the
-                #: cache key. Given that a case comes across that
-                #: an object "must" be used as a cache key
-                # if hasattr(arg, '__cacherepr__'):
-                #     arg = arg.__cacherepr__
-
-                new_args.append(arg)
-        else:
-            new_args = args
+        signature = inspect.signature(f)
+        processed_args = 0
+        for i, key in enumerate(signature.parameters):
+            if key in ['self', 'cls'] and i == 0:
+                new_args.append(repr(args[i]))
+                processed_args += 1
+            elif key in kwargs:
+                new_args.append(kwargs[key])
+            elif processed_args < len(args):
+                new_args.append(args[processed_args])
+                processed_args += 1
+            else:
+                new_args.append(signature.parameters[key].default)
 
         return tuple(new_args), {}
 
