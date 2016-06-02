@@ -42,7 +42,7 @@ def function_namespace(f, args=None):
     """
     Attempts to returns unique namespace for function
     """
-    m_args = inspect.getargspec(f)[0]
+    m_args = inspect.signature(f, follow_wrapped=True)[0]
     instance_token = None
 
     instance_self = getattr(f, '__self__', None)
@@ -415,7 +415,7 @@ class Cache(object):
         #: 1, b=2 is equivilant to a=1, b=2, etc.
         new_args = []
         arg_num = 0
-        argspec = inspect.getargspec(f)
+        argspec = inspect.signature(f, follow_wrapped=True)
 
         args_len = len(argspec.args)
         if args_len:
